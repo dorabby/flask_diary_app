@@ -1,17 +1,25 @@
 <!DOCTYPE html>
 <html lang="ja">
-  <head>
-    <meta charset="utf-8">
-    <title>
-      Flask日記アプリ
-    </title>
-  </head>
-  <body>
-    <h1>日記一覧</h1>
-    <ul>
-        {% for title in titles %}
-        <li>{{ title }}</li>
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}Diary App{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <header>
+        <h1>Diary App</h1>
+        <a href="{{ url_for('new_diary') }}">日記を書く</a>
+    </header>
+
+    <div class="index-container">
+        {% for id, create_date, updata_date, title in diaries %}
+        <a href="{{ url_for('diary_detail', diary_id=id) }}" style="text-decoration: none; color: inherit;">
+            <div class="index-card">
+                <p>{{ create_date }}</p>
+                <p>{{ title }}</p>
+            </div>
+        </a>
         {% endfor %}
-    </ul>
-  </body>
+    </div>
+</body>
 </html>
