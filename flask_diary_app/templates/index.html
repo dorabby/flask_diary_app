@@ -7,16 +7,21 @@
 </head>
 <body>
     <header>
-        <h1>Diary App</h1>
-        <a href="{{ url_for('new_diary') }}">日記を書く</a>
+        <h1><a href="{{ url_for('index') }}" class="move_top">Diary App</a></h1>
+        <a href="{{ url_for('new_diary') }}" class="new-diary">日記を書く</a>
     </header>
 
     <div class="index-container">
-        {% for id, create_date, updata_date, title in diaries %}
-        <a href="{{ url_for('diary_detail', diary_id=id) }}" style="text-decoration: none; color: inherit;">
+        {% for id, create_date, updata_date, title, image  in diaries %}
+        <a href="{{ url_for('diary_detail', diary_id=id) }}" class="index-card-link">
             <div class="index-card">
-                <p>{{ create_date }}</p>
-                <p>{{ title }}</p>
+                <span class="date">{{ create_date }}</span>
+                <p class="title">{{ title }}</p>
+                
+                {% if image %}
+                <img src="{{ url_for('static', filename='uploads/' + image) }}" 
+                    alt="image" class="thumbnail">
+                {% endif %}
             </div>
         </a>
         {% endfor %}

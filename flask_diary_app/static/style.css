@@ -17,7 +17,7 @@ header h1 {
     margin: 0;
     font-size: 20px;
 }
-header a {
+header .new-diary {
     background: white;
     color: #03A9F4;
     padding: 6px 12px;
@@ -26,8 +26,12 @@ header a {
     font-weight: bold;
     font-size: 14px;
 }
-header a:hover {
+header .new-diary:hover {
     background: #e0f7ff;
+}
+.move_top {
+    text-decoration: none;
+    color: white;
 }
 
 .container {
@@ -41,23 +45,55 @@ header a:hover {
 
 .index-container {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
     gap: 20px;
     padding: 20px;
+    justify-items: start; 
 }
 
 .index-card {
     background-color: white;
     border: 1px solid #333;
-    border-radius: 2px;
+    border-radius: 4px;
     padding: 10px;
-    text-align: left;
-    height: 80px;
     box-sizing: border-box;
+
+    /* カードの縦横固定 */
+    width: 250px;   /* 好きな横幅に調整 */
+    height: 250px;  /* 高さ固定 */
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
 }
 
-.index-card p {
-    margin: 0;
+.index-card-link{
+    text-decoration: none; 
+    color: inherit;
+}
+
+.date {
+    font-size: 0.85em;
+    color: #666;
+    margin-bottom: 6px;
+}
+
+.title {
+    font-weight: bold;
+    flex: 1;                  /* 余白をタイトルが占める */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;     /* 複数行省略 */
+    line-clamp: 2;
+    -webkit-line-clamp: 2;    /* 最大2行 */
+    -webkit-box-orient: vertical;
+    margin: 0 0 6px 0;
+}
+
+.thumbnail {
+    width: 100%;   /* カード幅に合わせる */
+    height: 100px; /* 固定高さ */
+    object-fit: cover;
+    border-radius: 4px;
 }
 
 .diary-content {
@@ -67,6 +103,7 @@ header a:hover {
     font-size: 15px;
 }
 
+/* ボタン関連*/
 .btn {
     display: inline-block;
     border: none;
@@ -96,7 +133,6 @@ header a:hover {
     transform: scale(0.97);
 }
 
-
 .btn-group {
     display: flex;
     justify-content: space-between;
@@ -108,7 +144,7 @@ header a:hover {
     gap: 12px;
 }
 
-
+/* 入力欄関連 */
 .form-group {
     margin-bottom: 15px;
 }
@@ -128,4 +164,70 @@ header a:hover {
 }
 .form-group textarea {
   height:500px
+}
+
+/* 画像関連*/
+.image-row {
+    display: flex;
+    align-items: start ; 
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.delete-label input[type="checkbox"] {
+    width: auto; 
+}
+
+input[disabled] {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.preview-container {
+    position: relative;
+    display: inline-block;
+    margin-bottom: 10px;
+}
+
+.preview-container img {
+    max-height: 150px;
+    border-radius: 6px;
+}
+
+.preview-label {
+    position: absolute;
+    margin: 0;
+    top: 4px;
+    left: 4px;
+    background: rgba(0, 0, 0, 0.6);
+    color: white;
+    font-size: 12px;
+    padding: 2px 6px;
+    border-radius: 3px;
+}
+
+/* 画像のプレビューのクリアボタン*/
+.clear-btn {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: rgba(0, 0, 0, 0.6);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 22px;
+    height: 22px;
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 18px;
+    padding: 0;
+    text-align: center;
+}
+
+.hidden {
+    display: none;
+}
+
+.shown {
+    display: block;
 }

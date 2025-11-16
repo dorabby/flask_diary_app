@@ -1,9 +1,18 @@
-from flask import Flask,render_template, request, redirect, url_for
+import os
+from flask import Flask,render_template, request, redirect, url_for, send_from_directory
 import sqlite3
 from datetime import datetime
+from werkzeug.utils import secure_filename
 
 app=Flask(__name__)
 DATABASE = "flask_diary_app/diary.db"
+
+app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'static', 'uploads')
+app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024  # 5MB
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 # --- データベース初期化 ---
 def init_db():
@@ -15,7 +24,8 @@ def init_db():
             create_date TEXT,
             updata_date TEXT,
             title TEXT,
-            content TEXT
+            content TEXT,
+            image TEXT
         )
     ''')
     db.commit()
@@ -23,18 +33,11 @@ def init_db():
 
 init_db()  # アプリ起動時にDBがなければ作成する
 
-# 仮データ（日記リスト）
-diaries = [
-    {"id": 1, "date": "11月1日", "title": "秋の散歩", "content": "公園を歩いた。紅葉が綺麗だった。"},
-    {"id": 2, "date": "11月2日", "title": "本を読んだ", "content": "『ノルウェイの森』を読んだ。"},
-    {"id": 3, "date": "11月3日", "title": "カレー作り", "content": "スパイスカレーに挑戦。うまくできた！"}
-]
-
 @app.route("/")
 def index():
     db = sqlite3.connect(DATABASE)
     data = db.cursor()
-    data.execute("SELECT id, create_date, updata_date, title FROM diaries ORDER BY id DESC")
+    data.execute("SELECT id, create_date, updata_date, title, image FROM diaries ORDER BY id DESC")
     diaries = data.fetchall()
     db.close()
     return render_template("index.html", diaries=diaries)
@@ -44,11 +47,19 @@ def new_diary():
     if request.method == "POST":
         title = request.form["title"]
         content = request.form["content"]
-        date = datetime.now().strftime("%m月%d日")
+        image_file = request.files.get("image")
+        image_filename = None
+        if image_file and allowed_file(image_file.filename):
+            filename = secure_filename(image_file.filename)
+            image_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            image_file.save(image_path)
+            image_filename = filename
+
+        date = datetime.now().strftime("%Y/%m/%d %H:%M:%S")
         db = sqlite3.connect(DATABASE)
         data = db.cursor()
-        data.execute("INSERT INTO diaries (create_date, updata_date, title, content) VALUES (?, ?, ?, ?)",
-                  (date, date, title, content))
+        data.execute("INSERT INTO diaries (create_date, updata_date, title, content, image) VALUES (?, ?, ?, ?, ?)",
+                  (date, date, title, content, image_filename))
         db.commit()
         db.close()
         return redirect(url_for("index"))
@@ -59,7 +70,7 @@ def diary_detail(diary_id):
     db = sqlite3.connect(DATABASE)
     db.row_factory = sqlite3.Row
     data = db.cursor()
-    data.execute("SELECT id, create_date, updata_date, title, content FROM diaries WHERE id = ?", (diary_id,))
+    data.execute("SELECT id, create_date, updata_date, title, content, image FROM diaries WHERE id = ?", (diary_id,))
     diary = data.fetchone()
     db.close()
     print(diary)
@@ -74,10 +85,29 @@ def edit_diary(diary_id):
     if request.method == "POST":
         title = request.form["title"]
         content = request.form["content"]
-        date = datetime.now().strftime("%m月%d日")
+        image_file = request.files.get("image")
+        delete_image = request.form.get("delete_image")
+        # 画像を取得
+        c.execute("SELECT image FROM diaries WHERE id = ?", (diary_id,))
+        existing = c.fetchone()
+        image_filename = existing["image"]
+        # 画像削除チェックがあれば削除
+        if delete_image and image_filename:
+            image_path = os.path.join(app.config['UPLOAD_FOLDER'], image_filename)
+            if os.path.exists(image_path):
+                os.remove(image_path)
+            image_filename = None
+            
+        if image_file and allowed_file(image_file.filename):
+            filename = secure_filename(image_file.filename)
+            image_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            image_file.save(image_path)
+            image_filename = filename
 
-        c.execute("UPDATE diaries SET title = ?, content = ?, updata_date=? WHERE id = ?", 
-                  (title, content, date, diary_id))
+        date = datetime.now().strftime("%Y/%m/%d %H:%M:%S")
+
+        c.execute("UPDATE diaries SET title = ?, content = ?, updata_date=?, image=? WHERE id = ?", 
+                  (title, content, date, image_filename, diary_id))
         conn.commit()
         conn.close()
 

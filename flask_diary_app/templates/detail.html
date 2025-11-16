@@ -4,7 +4,12 @@
 <p><strong>{{ diary.date }}</strong></p>
 <h2>{{ diary.title }}</h2>
 <div class="diary-content">{{ diary.content }}</div>
-
+{% if diary.image %}
+    <div style="margin-top: 20px; text-align: center;">
+        <img src="{{ url_for('static', filename='uploads/' + diary.image) }}" 
+             alt="日記画像" style="max-width: 100%; border-radius: 8px;">
+    </div>
+{% endif %}
 <div class="btn-group">
     <a href="{{ url_for('index') }}" class="btn btn-blue">戻る</a>
 
