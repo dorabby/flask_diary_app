@@ -1,8 +1,10 @@
 import os
+import uuid
 from flask import Flask,render_template, request, redirect, url_for, send_from_directory
 import sqlite3
 from datetime import datetime
 from werkzeug.utils import secure_filename
+
 
 app=Flask(__name__)
 DATABASE = "flask_diary_app/diary.db"
@@ -48,18 +50,14 @@ def new_diary():
         title = request.form["title"]
         content = request.form["content"]
         image_file = request.files.get("image")
-        image_filename = None
         if image_file and allowed_file(image_file.filename):
-            filename = secure_filename(image_file.filename)
-            image_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            image_file.save(image_path)
-            image_filename = filename
+            filename = save_image(image_file)
 
         date = datetime.now().strftime("%Y/%m/%d %H:%M:%S")
         db = sqlite3.connect(DATABASE)
         data = db.cursor()
         data.execute("INSERT INTO diaries (create_date, updata_date, title, content, image) VALUES (?, ?, ?, ?, ?)",
-                  (date, date, title, content, image_filename))
+                  (date, date, title, content, filename))
         db.commit()
         db.close()
         return redirect(url_for("index"))
@@ -93,21 +91,20 @@ def edit_diary(diary_id):
         image_filename = existing["image"]
         # 画像削除チェックがあれば削除
         if delete_image and image_filename:
-            image_path = os.path.join(app.config['UPLOAD_FOLDER'], image_filename)
-            if os.path.exists(image_path):
-                os.remove(image_path)
-            image_filename = None
+            del_image(image_filename)
+            filename = None
             
-        if image_file and allowed_file(image_file.filename):
-            filename = secure_filename(image_file.filename)
-            image_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            image_file.save(image_path)
-            image_filename = filename
+        elif image_file and allowed_file(image_file.filename):
+            # 古い画像を削除
+            if image_filename:
+                del_image(image_filename)
+            # 新しい画像を保存
+            filename = save_image(image_file)
 
         date = datetime.now().strftime("%Y/%m/%d %H:%M:%S")
 
         c.execute("UPDATE diaries SET title = ?, content = ?, updata_date=?, image=? WHERE id = ?", 
-                  (title, content, date, image_filename, diary_id))
+                  (title, content, date, filename, diary_id))
         conn.commit()
         conn.close()
 
@@ -127,3 +124,15 @@ def delete_diary(diary_id):
     conn.commit()
     conn.close()
     return redirect(url_for("index"))
+
+def save_image(image_file):
+    ext = image_file.filename.rsplit('.', 1)[1]
+    filename = f"{uuid.uuid4()}.{ext}"
+    image_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    image_file.save(image_path)
+    return filename
+
+def del_image(image_filename):
+    old_path = os.path.join(app.config['UPLOAD_FOLDER'], image_filename)
+    if os.path.exists(old_path):
+        os.remove(old_path)
