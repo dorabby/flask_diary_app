@@ -1,16 +1,7 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <title>{% block title %}Diary App{% endblock %}</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-</head>
+{% extends "base.html" %}
+{% block title %}Diary App{% endblock %}
+{% block content %}
 <body>
-    <header>
-        <h1><a href="{{ url_for('index') }}" class="move_top">Diary App</a></h1>
-        <a href="{{ url_for('new_diary') }}" class="new-diary">日記を書く</a>
-    </header>
-
     <div class="index-container">
         {% for id, create_date, updata_date, title, image  in diaries %}
         <a href="{{ url_for('diary_detail', diary_id=id) }}" class="index-card-link">
@@ -27,4 +18,4 @@
         {% endfor %}
     </div>
 </body>
-</html>
+{% endblock %}

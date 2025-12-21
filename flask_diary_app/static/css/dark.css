@@ -1,0 +1,22 @@
+body {
+    background-color:#2a2a2a;
+    color: #eee;
+}
+
+.container,
+.index-card {
+    background-color:  #1e1e1e;
+    border: 1px solid #aaa;
+}
+
+.date {
+    color: #aaa;
+}
+
+input[type="text"],
+.form-group textarea {
+    background-color: #2f2f2f;
+    color: #e6e6e6;
+    border: 1px solid #444;
+}
+

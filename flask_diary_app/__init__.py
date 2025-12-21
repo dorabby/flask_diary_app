@@ -1,6 +1,6 @@
 import os
 import uuid
-from flask import Flask,render_template, request, redirect, url_for, send_from_directory
+from flask import Flask,render_template, request, redirect, url_for, session
 import sqlite3
 from datetime import datetime
 from werkzeug.utils import secure_filename
@@ -8,6 +8,7 @@ from werkzeug.utils import secure_filename
 
 app=Flask(__name__)
 DATABASE = "flask_diary_app/diary.db"
+app.secret_key = "secret-key"
 
 app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'static', 'uploads')
 app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024  # 5MB
@@ -43,6 +44,13 @@ def index():
     diaries = data.fetchall()
     db.close()
     return render_template("index.html", diaries=diaries)
+
+# テーマ切り替え
+@app.route("/toggle_theme")
+def toggle_theme():
+    session["theme"] = "dark" if session.get("theme") == "light" else "light"
+    print("theme:", session.get("theme"))
+    return redirect(request.referrer or url_for("index"))
 
 @app.route("/new", methods=["GET", "POST"])
 def new_diary():
@@ -88,16 +96,16 @@ def edit_diary(diary_id):
         # 画像を取得
         c.execute("SELECT image FROM diaries WHERE id = ?", (diary_id,))
         existing = c.fetchone()
-        image_filename = existing["image"]
+        filename = existing["image"]
         # 画像削除チェックがあれば削除
-        if delete_image and image_filename:
-            del_image(image_filename)
+        if delete_image and filename:
+            del_image(filename)
             filename = None
             
         elif image_file and allowed_file(image_file.filename):
             # 古い画像を削除
-            if image_filename:
-                del_image(image_filename)
+            if filename:
+                del_image(filename)
             # 新しい画像を保存
             filename = save_image(image_file)
 

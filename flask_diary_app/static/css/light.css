@@ -1,0 +1,13 @@
+body {
+    background-color: #f6f8fa;
+    color: #222;
+}
+
+.container,
+.index-card {
+    background-color: white;
+}
+
+.date {
+    color: #666;
+}
