@@ -4,62 +4,73 @@
 <div class="container">
     <h2>日記を編集</h2>
     <form method="POST" enctype="multipart/form-data">
-            <div class="form-group">
-                <label>タイトル</label>
-                <input type="text" name="title" value="{{ diary.title }}" required>
+        <div class="form-group">
+            <div class="label-row">
+            <label>タイトル</label>
+                {% if errors.title %}
+                    <span class="error-text">{{ errors.title }}</span>
+                {% endif %}
             </div>
-            <div class="form-group">
+            <input type="text" name="title" maxlength="20" placeholder="タイトル（20文字以内）" 
+            value="{{ title | default('') }}" class="{% if errors.title %}input-error{% endif %}">
+        </div>
+        <div class="form-group">
+            <div class="label-row">
                 <label>内容</label>
-                <textarea name="content" rows="6" required>{{ diary.content }}</textarea>
-            </div>
-            <div class="form-group">
-                <label>画像</label>
-
-                <div class="image-row">
-                    <!-- 現在画像 -->
-                    {% if diary.image %}
-                    <div class="preview-container existing-preview" id="existingPreviewContainer">
-                        <p class="preview-label">現在の画像</p>
-                        <img id="existingPreview"
-                            src="{{ url_for('static', filename='uploads/' + diary.image) }}"
-                            data-original="{{ url_for('static', filename='uploads/' + diary.image) }}">
-                    </div>
-                    {% else %}
-                    <div class="preview-container existing-preview hidden"  id="existingPreviewContainer">
-                        <p class="preview-label">現在の画像</p>
-                        <img id="existingPreview">
-                    </div>
+                    {% if errors.content %}
+                        <span class="error-text">{{ errors.content }}</span>
                     {% endif %}
+            </div>
+            <textarea name="content" rows="6" class="{% if errors.content %}input-error{% endif %}">{{ content | default('') }}</textarea>
+        </div>
+        <div class="form-group">
+            <label>画像</label>
 
-                    <!-- 更新画像 -->
-                    <div class="preview-container new-preview hidden" id="newPreviewContainer">
-                        <p class="preview-label">更新後の画像</p>
-                        <img id="newPreview">
-                        <button type="button" id="clearNewPreviewBtn" class="clear-btn">×</button>
-                    </div>
+            <div class="image-row">
+                <!-- 現在画像 -->
+                {% if image %}
+                <div class="preview-container existing-preview" id="existingPreviewContainer">
+                    <p class="preview-label">現在の画像</p>
+                    <img id="existingPreview"
+                        src="{{ url_for('static', filename='uploads/' + image) }}"
+                        data-original="{{ url_for('static', filename='uploads/' + image) }}">
                 </div>
+                {% else %}
+                <div class="preview-container existing-preview hidden"  id="existingPreviewContainer">
+                    <p class="preview-label">現在の画像</p>
+                    <img id="existingPreview">
+                </div>
+                {% endif %}
 
-                <!-- ファイル選択 -->
-                <input type="file" name="image" id="imageInput">
-
-                <!-- 画像を使用しないチェック -->
-                <label class="delete-label" style="font-weight: normal;">
-                    <input type="checkbox" id="noImageCheck" name="delete_image" value="1"
-                        {% if not diary.image %} checked {% endif %}>
-                    画像を使用しない
-                </label>
+                <!-- 更新画像 -->
+                <div class="preview-container new-preview hidden" id="newPreviewContainer">
+                    <p class="preview-label">更新後の画像</p>
+                    <img id="newPreview">
+                    <button type="button" id="clearNewPreviewBtn" class="clear-btn">×</button>
+                </div>
             </div>
 
-            <div class="btn-group">
-                <a href="{{ url_for('diary_detail', diary_id=diary.id) }}" class="btn btn-blue">戻る</a>
+            <!-- ファイル選択 -->
+            <input type="file" name="image" id="imageInput">
 
-                <div class="btn-right">
-                    <button type="submit" class="btn btn-blue">更新</button>
-                    <form action="{{ url_for('delete_diary', diary_id=diary.id) }}" method="POST" style="display:inline;">
-                        <button type="submit" class="btn btn-gray" onclick="return confirm('本当に削除しますか？');">削除</button>
-                    </form>
-                </div>
+            <!-- 画像を使用しないチェック -->
+            <label class="delete-label" style="font-weight: normal;">
+                <input type="checkbox" id="noImageCheck" name="delete_image" value="1"
+                    {% if not image %} checked {% endif %}>
+                画像を使用しない
+            </label>
+        </div>
+
+        <div class="btn-group">
+            <a href="{{ url_for('diary_detail', diary_id=diary_id) }}" class="btn btn-blue">戻る</a>
+
+            <div class="btn-right">
+                <button type="submit" class="btn btn-blue">更新</button>
+                <form action="{{ url_for('delete_diary', diary_id=diary_id) }}" method="POST" style="display:inline;">
+                    <button type="submit" class="btn btn-gray" onclick="return confirm('本当に削除しますか？');">削除</button>
+                </form>
             </div>
+        </div>
     </form>
     <script type="module" src="{{ url_for('static', filename='js/edit.js') }}"></script>
 </div>

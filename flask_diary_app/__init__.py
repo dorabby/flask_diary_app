@@ -36,14 +36,33 @@ def init_db():
 
 init_db()  # アプリ起動時にDBがなければ作成する
 
+# 一覧表示
 @app.route("/")
 def index():
     db = sqlite3.connect(DATABASE)
-    data = db.cursor()
-    data.execute("SELECT id, create_date, updata_date, title, image FROM diaries ORDER BY id DESC")
-    diaries = data.fetchall()
+    db.row_factory = sqlite3.Row #カラム名でアクセスできるようになる
+    c = db.cursor()
+    c.execute("SELECT id, create_date, updata_date, title, content, image FROM diaries ORDER BY id DESC")
+    diaries = c.fetchall()
     db.close()
-    return render_template("index.html", diaries=diaries)
+
+    diary_list = []
+    for d in diaries:
+        #本文を10文字までプレビュー表示
+        normalized = " ".join(d["content"].split())
+        preview = normalized[:30]
+        if len(normalized) > 30:
+            preview += "…"
+
+        diary_list.append({
+            "id": d["id"],
+            "title": d["title"],
+            "preview": preview,
+            "image": d["image"],
+            "create_date": d["create_date"]
+        })
+    print(diary_list)
+    return render_template("index.html", diaries=diary_list)
 
 # テーマ切り替え
 @app.route("/toggle_theme")
@@ -52,51 +71,73 @@ def toggle_theme():
     print("theme:", session.get("theme"))
     return redirect(request.referrer or url_for("index"))
 
+# 新規登録
 @app.route("/new", methods=["GET", "POST"])
 def new_diary():
     if request.method == "POST":
-        title = request.form["title"]
-        content = request.form["content"]
+        #バリデーションチェック
+        errors, data = validation_content(request.form)
+        print(errors)
+        if errors:
+            return render_template("new.html", errors=errors,
+                title=data["title"],content=data["content"])
+        filename = None
         image_file = request.files.get("image")
         if image_file and allowed_file(image_file.filename):
             filename = save_image(image_file)
 
         date = datetime.now().strftime("%Y/%m/%d %H:%M:%S")
         db = sqlite3.connect(DATABASE)
-        data = db.cursor()
-        data.execute("INSERT INTO diaries (create_date, updata_date, title, content, image) VALUES (?, ?, ?, ?, ?)",
-                  (date, date, title, content, filename))
+        db.row_factory = sqlite3.Row
+        c = db.cursor()
+        c.execute("INSERT INTO diaries (create_date, updata_date, title, content, image) VALUES (?, ?, ?, ?, ?)",
+                  (date, date, data["title"], data["content"], filename))
         db.commit()
         db.close()
         return redirect(url_for("index"))
-    return render_template("new.html")
+    return render_template("new.html", errors={})
 
+# 詳細取得
 @app.route("/diary/<int:diary_id>")
 def diary_detail(diary_id):
     db = sqlite3.connect(DATABASE)
     db.row_factory = sqlite3.Row
-    data = db.cursor()
-    data.execute("SELECT id, create_date, updata_date, title, content, image FROM diaries WHERE id = ?", (diary_id,))
-    diary = data.fetchone()
+    c = db.cursor()
+    c.execute("SELECT id, create_date, updata_date, title, content, image FROM diaries WHERE id = ?", (diary_id,))
+    diary = c.fetchone()
     db.close()
     print(diary)
     return render_template("detail.html", diary=diary)
 
+# 編集
 @app.route("/edit/<int:diary_id>", methods=["GET", "POST"])
 def edit_diary(diary_id):
     conn = sqlite3.connect(DATABASE)
     conn.row_factory = sqlite3.Row
     c = conn.cursor()
 
+    # データ取得
+    c.execute("SELECT * FROM diaries WHERE id = ?", (diary_id,))
+    diary = c.fetchone()
+
     if request.method == "POST":
-        title = request.form["title"]
-        content = request.form["content"]
+        errors, data = validation_content(request.form)
         image_file = request.files.get("image")
         delete_image = request.form.get("delete_image")
         # 画像を取得
         c.execute("SELECT image FROM diaries WHERE id = ?", (diary_id,))
         existing = c.fetchone()
         filename = existing["image"]
+        if errors:
+            conn.close()
+            return render_template(
+                "edit.html",
+                errors=errors,
+                title=data["title"],
+                content=data["content"],
+                image=filename,
+                diary_id=diary_id
+            )
         # 画像削除チェックがあれば削除
         if delete_image and filename:
             del_image(filename)
@@ -112,18 +153,24 @@ def edit_diary(diary_id):
         date = datetime.now().strftime("%Y/%m/%d %H:%M:%S")
 
         c.execute("UPDATE diaries SET title = ?, content = ?, updata_date=?, image=? WHERE id = ?", 
-                  (title, content, date, filename, diary_id))
+                  (data["title"], data["content"], date, filename, diary_id))
         conn.commit()
         conn.close()
 
         return redirect(url_for("diary_detail", diary_id=diary_id))
 
-    # GET（編集画面表示）
-    c.execute("SELECT * FROM diaries WHERE id = ?", (diary_id,))
-    diary = c.fetchone()
-    conn.close()
-    return render_template("edit.html", diary=diary)
 
+    conn.close()
+    return render_template(
+        "edit.html",
+        errors={},
+        title=diary["title"],
+        content=diary["content"],
+        image=diary["image"],
+        diary_id=diary_id
+    )
+
+# 削除
 @app.route("/delete/<int:diary_id>", methods=["POST"])
 def delete_diary(diary_id):
     conn = sqlite3.connect(DATABASE)
@@ -133,6 +180,7 @@ def delete_diary(diary_id):
     conn.close()
     return redirect(url_for("index"))
 
+# 画像登録処理
 def save_image(image_file):
     ext = image_file.filename.rsplit('.', 1)[1]
     filename = f"{uuid.uuid4()}.{ext}"
@@ -140,7 +188,29 @@ def save_image(image_file):
     image_file.save(image_path)
     return filename
 
+# 画像削除
 def del_image(image_filename):
     old_path = os.path.join(app.config['UPLOAD_FOLDER'], image_filename)
     if os.path.exists(old_path):
         os.remove(old_path)
+
+# バリデーションチェック
+def validation_content(request):
+    errors = {}
+
+    title = request["title"].strip()
+    content = request["content"].strip()
+
+    if not title:
+        errors["title"] = "必須項目です。"
+    elif len(title) > 20:
+        errors["title"] = "20文字以内で入力してください。"
+
+    if not content:
+        errors["content"] = "必須項目です。"
+
+    return errors, {
+        "title": title,
+        "content": content
+    }
+

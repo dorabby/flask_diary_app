@@ -3,14 +3,14 @@
 {% block content %}
 <body>
     <div class="index-container">
-        {% for id, create_date, updata_date, title, image  in diaries %}
-        <a href="{{ url_for('diary_detail', diary_id=id) }}" class="index-card-link">
+        {% for diary in diaries %}
+        <a href="{{ url_for('diary_detail', diary_id=diary.id) }}" class="index-card-link">
             <div class="index-card">
-                <span class="date">{{ create_date }}</span>
-                <p class="title">{{ title }}</p>
-                
-                {% if image %}
-                <img src="{{ url_for('static', filename='uploads/' + image) }}" 
+                <span class="date">{{ diary.create_date }}</span>
+                <p class="title">{{ diary.title }}</p>
+                <p class="preview">{{ diary.preview }}</p>
+                {% if diary.image %}
+                <img src="{{ url_for('static', filename='uploads/' + diary.image) }}" 
                     alt="image" class="thumbnail">
                 {% endif %}
             </div>

@@ -1,13 +1,26 @@
-body {
-    background-color: #f6f8fa;
-    color: #222;
-}
+:root {
+    /* text */
+    --text-main: #222;
+    --text-sub: #666;
+    --text-muted: #999;
+    --text-inverse: #ffffff;
 
-.container,
-.index-card {
-    background-color: white;
-}
+    /* background */
+    --bg-body: #f6f8fa;
+    --bg-surface: #ffffff;
+    --bg-input: #ffffff;
 
-.date {
-    color: #666;
+    /* border */
+    --border-main: #333;
+    --border-sub: #ccc;
+
+    /* accent */
+    --accent: #7FAE8A;
+    --accent-hover: #5E8F6A;
+
+    /* shadow */
+    --shadow-card: rgba(0, 0, 0, 0.1);
+
+    /* error */
+    --error: #c0392b;
 }

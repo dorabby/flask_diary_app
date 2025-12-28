@@ -5,13 +5,24 @@
     <h2>日記を書く</h2>
     <form method="POST" enctype="multipart/form-data">
         <div class="form-group">
+            <div class="label-row">
             <label>タイトル</label>
-            <input type="text" name="title" required>
+                {% if errors.title %}
+                    <span class="error-text">{{ errors.title }}</span>
+                {% endif %}
+            </div>
+            <input type="text" name="title" maxlength="20" placeholder="タイトル（20文字以内）" 
+            value="{{ title | default('') }}" class="{% if errors.title %}input-error{% endif %}">
         </div>
 
         <div class="form-group">
-            <label>内容</label>
-            <textarea name="content" rows="6" required></textarea>
+            <div class="label-row">
+                <label>内容</label>
+                    {% if errors.content %}
+                        <span class="error-text">{{ errors.content }}</span>
+                    {% endif %}
+            </div>
+            <textarea name="content" rows="6" class="{% if errors.content %}input-error{% endif %}">{{ content | default('') }}</textarea>
         </div>
 
         <div class="form-group">

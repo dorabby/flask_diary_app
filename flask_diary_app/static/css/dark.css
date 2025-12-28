@@ -1,22 +1,26 @@
-body {
-    background-color:#2a2a2a;
-    color: #eee;
-}
+:root {
+    /* text */
+    --text-main: #eee;
+    --text-sub: #aaa;
+    --text-muted: #888;
+    --text-inverse: #ffffff;
 
-.container,
-.index-card {
-    background-color:  #1e1e1e;
-    border: 1px solid #aaa;
-}
+    /* background */
+    --bg-body: #2a2a2a;
+    --bg-surface: #1e1e1e;
+    --bg-input: #2f2f2f;
 
-.date {
-    color: #aaa;
-}
+    /* border */
+    --border-main: #aaa;
+    --border-sub: #444;
 
-input[type="text"],
-.form-group textarea {
-    background-color: #2f2f2f;
-    color: #e6e6e6;
-    border: 1px solid #444;
-}
+    /* accent */
+    --accent: #7FAE8A;
+    --accent-hover: #5E8F6A;
 
+    /* shadow */
+    --shadow-card: rgba(0, 0, 0, 0.4);
+
+    /* error */
+    --error: #c0392b;
+}
