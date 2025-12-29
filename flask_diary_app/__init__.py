@@ -39,16 +39,43 @@ init_db()  # アプリ起動時にDBがなければ作成する
 # 一覧表示
 @app.route("/")
 def index():
+    #検索ワードと検索対象とソート
+    keyword = request.args.get("search", "").strip()
+    scope = request.args.get("scope", "title")
+    sort = request.args.get("sort", "new")
+    preserve = request.args.get("preserve", "")
+
     db = sqlite3.connect(DATABASE)
     db.row_factory = sqlite3.Row #カラム名でアクセスできるようになる
     c = db.cursor()
-    c.execute("SELECT id, create_date, updata_date, title, content, image FROM diaries ORDER BY id DESC")
+
+    sql = """SELECT id, create_date, title, content, image FROM diaries"""
+    
+    #検索キーワードが入力されていれば条件追加する
+    params = []
+    if keyword:
+        if scope == "all":
+            sql += " WHERE title LIKE ? OR content LIKE ?"
+            params.extend([f"%{keyword}%", f"%{keyword}%"])
+        else:
+            sql += " WHERE title LIKE ?"
+            params.append(f"%{keyword}%")
+    #ソート設定
+    order_map = {
+        "new": "create_date DESC",
+        "old": "create_date ASC",
+        "title": "title COLLATE NOCASE ASC"
+    }
+    order_by = order_map.get(sort, "create_date DESC")
+
+    sql += f" ORDER BY {order_by}"
+    c.execute(sql, params)
     diaries = c.fetchall()
     db.close()
 
     diary_list = []
     for d in diaries:
-        #本文を10文字までプレビュー表示
+        #本文を30文字までプレビュー表示
         normalized = " ".join(d["content"].split())
         preview = normalized[:30]
         if len(normalized) > 30:
@@ -61,14 +88,12 @@ def index():
             "image": d["image"],
             "create_date": d["create_date"]
         })
-    print(diary_list)
-    return render_template("index.html", diaries=diary_list)
+    return render_template("index.html", diaries=diary_list, sort=sort, preserve=preserve)
 
 # テーマ切り替え
 @app.route("/toggle_theme")
 def toggle_theme():
     session["theme"] = "dark" if session.get("theme") == "light" else "light"
-    print("theme:", session.get("theme"))
     return redirect(request.referrer or url_for("index"))
 
 # 新規登録
@@ -77,7 +102,6 @@ def new_diary():
     if request.method == "POST":
         #バリデーションチェック
         errors, data = validation_content(request.form)
-        print(errors)
         if errors:
             return render_template("new.html", errors=errors,
                 title=data["title"],content=data["content"])
@@ -106,7 +130,6 @@ def diary_detail(diary_id):
     c.execute("SELECT id, create_date, updata_date, title, content, image FROM diaries WHERE id = ?", (diary_id,))
     diary = c.fetchone()
     db.close()
-    print(diary)
     return render_template("detail.html", diary=diary)
 
 # 編集

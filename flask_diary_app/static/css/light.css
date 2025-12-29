@@ -16,7 +16,9 @@
 
     /* accent */
     --accent: #7FAE8A;
+    --accent-sub: #e6f1ea;
     --accent-hover: #5E8F6A;
+    --accent-sub: #e6f1ea;
 
     /* shadow */
     --shadow-card: rgba(0, 0, 0, 0.1);

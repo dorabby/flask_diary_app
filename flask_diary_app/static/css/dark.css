@@ -11,11 +11,13 @@
     --bg-input: #2f2f2f;
 
     /* border */
+    --border: #555;
     --border-main: #aaa;
     --border-sub: #444;
 
     /* accent */
     --accent: #7FAE8A;
+    --accent-sub: #2f3f36;
     --accent-hover: #5E8F6A;
 
     /* shadow */

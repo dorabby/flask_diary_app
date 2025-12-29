@@ -119,6 +119,88 @@ header .new-diary:hover {
     font-size: 15px;
 }
 
+/* 一覧検索部 */
+.search-form {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 20px 20px 5px;
+    min-width: 700px; 
+    width: 30%;
+}
+
+.search-box {
+    display: flex;
+    align-items: center;
+    background: var(--bg-input);
+    border: 1px solid var(--border-sub);
+    border-radius: 20px;
+    overflow: hidden;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.search-scope {
+    border: none;
+    background: transparent;
+    padding: 6px 10px;
+    font-size: 13px;
+    color: var(--text-sub);
+    outline: none;
+}
+
+.search-input {
+    flex: 1;
+    border: none;
+    padding: 6px 10px;
+    font-size: 14px;
+    background: transparent;
+    color: var(--text-main);
+    outline: none;
+}
+
+.search-btn {
+    border: none;
+    background: var(--accent);
+    color: white;
+    padding: 7px 12px;
+    cursor: pointer;
+}
+
+.search-btn:hover {
+    background: var(--accent-hover);
+}
+
+.sort-buttons {
+    display: flex;
+    gap: 8px;
+}
+
+.sort-btn {
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 1px solid var(--border-sub);
+    text-decoration: none;
+    font-size: 13px;
+    color: var(--text-sub);
+    background-color: transparent;
+    transition: all 0.2s ease;
+}
+
+.sort-btn:hover {
+    background-color: var(--accent-sub);
+    color: var(--text-main);
+}
+
+.sort-btn.active {
+    background-color: var(--accent);
+    color: white;
+    border-color: var(--accent);
+    font-weight: bold;
+}
+
+
+/* エラーメッセージ部 */
 .error-text {
   color: var(--error);
   font-size: 0.85rem;

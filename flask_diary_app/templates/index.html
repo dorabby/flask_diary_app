@@ -2,7 +2,48 @@
 {% block title %}Diary App{% endblock %}
 {% block content %}
 <body>
+<form method="get" action="{{ url_for('index') }}" class="search-form">
+    <div class="search-box">
+        <select name="scope" class="search-scope">
+            <option value="title"
+                {% if request.args.get('scope', 'title') == 'title' %}selected{% endif %}>
+                タイトル
+            </option>
+            <option value="all"
+                {% if request.args.get('scope') == 'all' %}selected{% endif %}>
+                タイトル＋本文
+            </option>
+        </select>
+        <input
+            type="text"
+            name="search"
+            placeholder="検索キーワードを入力する"
+            value="{{ request.args.get('search', '') }}"
+            class="search-input"
+        >
+        <button type="submit" class="search-btn">
+            <i class="bi bi-search"></i>
+        </button>
+    </div>
+    <div class="sort-buttons">
+        <a href="{{ url_for('index', sort='new', preserve=preserve) }}"
+        class="sort-btn {% if sort == 'new' %}active{% endif %}">
+            新しい順
+        </a>
+
+        <a href="{{ url_for('index', sort='old', preserve=preserve) }}"
+        class="sort-btn {% if sort == 'old' %}active{% endif %}">
+            古い順
+        </a>
+
+        <a href="{{ url_for('index', sort='title', preserve=preserve) }}"
+        class="sort-btn {% if sort == 'title' %}active{% endif %}">
+            タイトル順
+        </a>
+    </div>
+</form>
     <div class="index-container">
+
         {% for diary in diaries %}
         <a href="{{ url_for('diary_detail', diary_id=diary.id) }}" class="index-card-link">
             <div class="index-card">
