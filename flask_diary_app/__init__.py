@@ -1,18 +1,22 @@
 import os
 import uuid
-from flask import Flask,render_template, request, redirect, url_for, session
+from flask import Flask, abort, flash,render_template, request, redirect, url_for, session, send_file, after_this_request
 import sqlite3
 from datetime import datetime
 from werkzeug.utils import secure_filename
+import zipfile
+import shutil
+import json
+import threading
 
 
 app=Flask(__name__)
 DATABASE = "flask_diary_app/diary.db"
 app.secret_key = "secret-key"
-
 app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'static', 'uploads')
 app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024  # 5MB
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+TMP =  os.path.join(app.root_path, "tmp")
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -135,9 +139,9 @@ def diary_detail(diary_id):
 # 編集
 @app.route("/edit/<int:diary_id>", methods=["GET", "POST"])
 def edit_diary(diary_id):
-    conn = sqlite3.connect(DATABASE)
-    conn.row_factory = sqlite3.Row
-    c = conn.cursor()
+    db = sqlite3.connect(DATABASE)
+    db.row_factory = sqlite3.Row
+    c = db.cursor()
 
     # データ取得
     c.execute("SELECT * FROM diaries WHERE id = ?", (diary_id,))
@@ -152,7 +156,7 @@ def edit_diary(diary_id):
         existing = c.fetchone()
         filename = existing["image"]
         if errors:
-            conn.close()
+            db.close()
             return render_template(
                 "edit.html",
                 errors=errors,
@@ -177,13 +181,13 @@ def edit_diary(diary_id):
 
         c.execute("UPDATE diaries SET title = ?, content = ?, updata_date=?, image=? WHERE id = ?", 
                   (data["title"], data["content"], date, filename, diary_id))
-        conn.commit()
-        conn.close()
+        db.commit()
+        db.close()
 
         return redirect(url_for("diary_detail", diary_id=diary_id))
 
 
-    conn.close()
+    db.close()
     return render_template(
         "edit.html",
         errors={},
@@ -196,11 +200,11 @@ def edit_diary(diary_id):
 # 削除
 @app.route("/delete/<int:diary_id>", methods=["POST"])
 def delete_diary(diary_id):
-    conn = sqlite3.connect(DATABASE)
-    c = conn.cursor()
+    db = sqlite3.connect(DATABASE)
+    c = db.cursor()
     c.execute("DELETE FROM diaries WHERE id = ?", (diary_id,))
-    conn.commit()
-    conn.close()
+    db.commit()
+    db.close()
     return redirect(url_for("index"))
 
 # 画像登録処理
@@ -237,3 +241,146 @@ def validation_content(request):
         "content": content
     }
 
+#記事エクスポート
+@app.route("/export/<int:diary_id>")
+def export_diary(diary_id):
+    # 一時フォルダ名
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    base_dir = os.path.join(TMP, f"export_{timestamp}")
+    images_dir = os.path.join(base_dir, "images")
+    os.makedirs(images_dir, exist_ok=True)
+
+    db = sqlite3.connect(DATABASE)
+    db.row_factory = sqlite3.Row
+    c = db.cursor()
+
+    c.execute(
+        "SELECT id, title, content, create_date, image FROM diaries WHERE id = ?",
+        (diary_id,)
+    )
+    diary = c.fetchone()
+    db.close()
+
+    if diary is None:
+        abort(404)
+
+    # 画像コピー
+    images = []
+    if diary["image"]:
+        src = os.path.join(app.config["UPLOAD_FOLDER"], diary["image"])
+        dst = os.path.join(images_dir, diary["image"])
+        #画像存在確認
+        if os.path.exists(src):
+            shutil.copy(src, dst)
+            images.append(diary["image"])
+
+    # JSON作成
+    data = {
+        "app": "diary_app",
+        "version": 1,
+        "exported_at": datetime.now().isoformat(),
+        "diary": {
+            "id": diary["id"],
+            "title": diary["title"],
+            "content": diary["content"],
+            "create_date": diary["create_date"],
+            "images": images
+        }
+    }
+
+    json_path = os.path.join(base_dir, "data.json")
+    with open(json_path, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+
+    # ZIP作成
+    zip_path = os.path.abspath(f"{base_dir}.zip")
+    with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zipf:
+        for foldername, _, filenames in os.walk(base_dir):
+            for filename in filenames:
+                file_path = os.path.join(foldername, filename)
+                arcname = os.path.relpath(file_path, base_dir)
+                zipf.write(file_path, arcname)
+
+    # 一時フォルダ削除
+    shutil.rmtree(base_dir)
+
+    delayed_clean(zip_path)
+    
+    return send_file(
+        zip_path,
+        as_attachment=True,
+        download_name=f"diary_export_{timestamp}.zip"
+    )
+
+#zipファイルの削除
+def delayed_clean(zip_path, delay=3):
+    def clean_zip():
+        try:
+            if os.path.exists(zip_path):
+                os.remove(zip_path)
+        except Exception as e:
+            app.logger.error(f"Failed to delete zip: {e}")
+    #3秒後に削除するようにタイマー設定（設定しないと、Windows では削除時にまだファイル掴まれてる判定でエラーになる）
+    threading.Timer(delay, clean_zip).start()
+
+@app.route("/import", methods=["POST"])
+def import_diary():
+    #zip受け取り
+    file = request.files.get("import_file")
+    if not file or file.filename == "":
+        flash("インポートファイルを選択してください", "error")
+        return redirect(url_for("new_diary"))
+    if not file or not file.filename.endswith(".zip"):
+        flash("zip形式のファイルを選択してください", "error")
+        return redirect(url_for("new_diary"))
+    # 一時フォルダ作成展開
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    base_dir = os.path.join(TMP, f"import_{timestamp}")
+    os.makedirs(base_dir, exist_ok=True)
+
+    zip_path = os.path.join(base_dir, "import.zip")
+    file.save(zip_path)
+
+    with zipfile.ZipFile(zip_path, "r") as zipf:
+        zipf.extractall(base_dir)
+    
+    # json読み込み
+    json_path = os.path.join(base_dir, "data.json")
+    with open(json_path, encoding="utf-8") as f:
+        data = json.load(f)
+
+    if data.get("app") != "diary_app":
+        abort(400)
+
+    if data.get("version") != 1:
+        abort(400)
+
+    diary = data["diary"]
+    print(data["diary"].keys())
+    # 画像コピー
+    image_filename = None
+    images_dir = os.path.join(base_dir, "images")
+    if diary["images"]:
+        src = os.path.join(images_dir, diary["images"][0])
+        if os.path.exists(src):
+            image_filename = diary["images"][0]
+            dst = os.path.join(app.config["UPLOAD_FOLDER"], image_filename)
+            shutil.copy(src, dst)
+
+    db = sqlite3.connect(DATABASE)
+    c = db.cursor()
+
+    c.execute("""
+        INSERT INTO diaries (title, content, create_date, image)
+        VALUES (?, ?, ?, ?)
+    """, (
+        diary["title"],
+        diary["content"],
+        diary["create_date"],
+        image_filename
+    ))
+
+    db.commit()
+    db.close()
+    shutil.rmtree(base_dir)
+    return redirect(url_for("index"))

@@ -252,8 +252,17 @@ header .new-diary:hover {
     display: flex;
     gap: 12px;
 }
+.btn-group.right {
+    display: flex;
+    justify-content: flex-end;
+}
+
 
 /* 入力欄関連 */
+.mode-select{
+    margin-bottom: 20px;
+}
+
 .form-group {
     margin-bottom: 15px;
 }
@@ -276,7 +285,7 @@ header .new-diary:hover {
     box-sizing: border-box;
 }
 .form-group textarea {
-  height:500px
+  height:300px
 }
 
 /* 画像関連*/
