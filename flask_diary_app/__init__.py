@@ -363,6 +363,7 @@ def import_diary():
     # ファイルがない、json読み込みエラー、jsonに記載されたappとversionの記載が違ったらエラーメッセージを返す
     except (FileNotFoundError, json.JSONDecodeError, ValueError):
         flash("インポートファイルが不正です。", "error")
+        shutil.rmtree(base_dir)
         return redirect(url_for("new_diary", mode="import"))
     diary = data["diary"]
     #バリデーションチェック
@@ -374,6 +375,7 @@ def import_diary():
         flash("インポートデータに不正があります。", "error")
         for message in errors.values():
             flash("・"+message, "error")
+        shutil.rmtree(base_dir)
         return redirect(url_for("new_diary", mode="import"))
     # 画像コピー
     image_filename = None
