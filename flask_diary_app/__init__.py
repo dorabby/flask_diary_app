@@ -92,6 +92,7 @@ def index():
             "image": d["image"],
             "create_date": d["create_date"]
         })
+
     return render_template("index.html", diaries=diary_list, sort=sort, preserve=preserve)
 
 # テーマ切り替え
@@ -105,10 +106,9 @@ def toggle_theme():
 def new_diary():
     if request.method == "POST":
         #バリデーションチェック
-        errors, data = validation_content(request.form)
+        errors, data = validation_content(request.form.get("title"), request.form.get("content"))
         if errors:
-            return render_template("new.html", errors=errors,
-                title=data["title"],content=data["content"])
+            return render_template("new.html",mode="create", errors=errors, title=data["title"],content=data["content"])
         filename = None
         image_file = request.files.get("image")
         if image_file and allowed_file(image_file.filename):
@@ -123,7 +123,7 @@ def new_diary():
         db.commit()
         db.close()
         return redirect(url_for("index"))
-    return render_template("new.html", errors={})
+    return render_template("new.html",mode="create", errors={})
 
 # 詳細取得
 @app.route("/diary/<int:diary_id>")
@@ -148,7 +148,7 @@ def edit_diary(diary_id):
     diary = c.fetchone()
 
     if request.method == "POST":
-        errors, data = validation_content(request.form)
+        errors, data = validation_content(request.form.get("title"), request.form.get("content"))
         image_file = request.files.get("image")
         delete_image = request.form.get("delete_image")
         # 画像を取得
@@ -209,32 +209,37 @@ def delete_diary(diary_id):
 
 # 画像登録処理
 def save_image(image_file):
-    ext = image_file.filename.rsplit('.', 1)[1]
-    filename = f"{uuid.uuid4()}.{ext}"
+    filename = create_uuid_filename(image_file.filename)
     image_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
     image_file.save(image_path)
     return filename
 
+#UUID生成
+def create_uuid_filename(image_file):
+    ext = os.path.splitext(image_file)[1]
+    return f"{uuid.uuid4().hex}{ext}"
+
 # 画像削除
 def del_image(image_filename):
+    print("通過してる？")
     old_path = os.path.join(app.config['UPLOAD_FOLDER'], image_filename)
     if os.path.exists(old_path):
         os.remove(old_path)
 
 # バリデーションチェック
-def validation_content(request):
+def validation_content(title, content):
     errors = {}
 
-    title = request["title"].strip()
-    content = request["content"].strip()
+    title = title.strip()
+    content = content.strip()
 
     if not title:
-        errors["title"] = "必須項目です。"
+        errors["title"] = "タイトルは必須項目です。"
     elif len(title) > 20:
-        errors["title"] = "20文字以内で入力してください。"
+        errors["title"] = "タイトルは20文字以内で入力してください。"
 
     if not content:
-        errors["content"] = "必須項目です。"
+        errors["content"] = "本文は必須項目です。"
 
     return errors, {
         "title": title,
@@ -329,10 +334,10 @@ def import_diary():
     file = request.files.get("import_file")
     if not file or file.filename == "":
         flash("インポートファイルを選択してください", "error")
-        return redirect(url_for("new_diary"))
+        return redirect(url_for("new_diary", mode="import"))
     if not file or not file.filename.endswith(".zip"):
         flash("zip形式のファイルを選択してください", "error")
-        return redirect(url_for("new_diary"))
+        return redirect(url_for("new_diary", mode="import"))
     # 一時フォルダ作成展開
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     base_dir = os.path.join(TMP, f"import_{timestamp}")
@@ -346,24 +351,38 @@ def import_diary():
     
     # json読み込み
     json_path = os.path.join(base_dir, "data.json")
-    with open(json_path, encoding="utf-8") as f:
-        data = json.load(f)
+    try:
+        with open(json_path, encoding="utf-8") as f:
+            data = json.load(f)
 
-    if data.get("app") != "diary_app":
-        abort(400)
+        if data.get("app") != "diary_app":
+            raise ValueError("invalid app")
 
-    if data.get("version") != 1:
-        abort(400)
-
+        if data.get("version") != 1:
+            raise ValueError("invalid version")
+    # ファイルがない、json読み込みエラー、jsonに記載されたappとversionの記載が違ったらエラーメッセージを返す
+    except (FileNotFoundError, json.JSONDecodeError, ValueError):
+        flash("インポートファイルが不正です。", "error")
+        return redirect(url_for("new_diary", mode="import"))
     diary = data["diary"]
-    print(data["diary"].keys())
+    #バリデーションチェック
+    errors, data = validation_content(
+    diary["title"],
+    diary["content"]
+    )
+    if errors:
+        flash("インポートデータに不正があります。", "error")
+        for message in errors.values():
+            flash("・"+message, "error")
+        return redirect(url_for("new_diary", mode="import"))
     # 画像コピー
     image_filename = None
     images_dir = os.path.join(base_dir, "images")
     if diary["images"]:
-        src = os.path.join(images_dir, diary["images"][0])
+        src_name = diary["images"][0]
+        src = os.path.join(images_dir, src_name)
         if os.path.exists(src):
-            image_filename = diary["images"][0]
+            image_filename = create_uuid_filename(src_name)
             dst = os.path.join(app.config["UPLOAD_FOLDER"], image_filename)
             shutil.copy(src, dst)
 
@@ -373,7 +392,7 @@ def import_diary():
     c.execute("""
         INSERT INTO diaries (title, content, create_date, image)
         VALUES (?, ?, ?, ?)
-    """, (
+        """, (
         diary["title"],
         diary["content"],
         diary["create_date"],

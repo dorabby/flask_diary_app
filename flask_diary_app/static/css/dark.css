@@ -25,4 +25,9 @@
 
     /* error */
     --error: #c0392b;
+
+    /* flash */
+    --flash-error-bg: #3a1f1f;
+    --flash-error-text: #f1b0b7;
+    --flash-error-border: #6b2a2a;
 }

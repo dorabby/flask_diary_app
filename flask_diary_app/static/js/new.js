@@ -4,8 +4,8 @@ import { setupImagePreview } from "./image_preview.js";
 window.addEventListener('load', formSwitch);
 
 function formSwitch() {
-    const createForm = document.getElementsByClassName("createForm")[0];
-    const importForm = document.getElementsByClassName("importForm")[0];
+    const createForm = document.getElementsByClassName("create-form")[0];
+    const importForm = document.getElementsByClassName("import-form")[0];
     const mode = document.getElementsByClassName("mode");
     if (mode[0].checked) {
         createForm.style.display="";
@@ -15,6 +15,13 @@ function formSwitch() {
         importForm.style.display="";
     }
 }
+// インポートでエラーが出てリダイレクトしたときにインポート画面を表示する
+const params = new URLSearchParams(window.location.search);
+if (params.get("mode") === "import") {
+    document.querySelector('input[value="import"]').checked = true;
+    formSwitch();
+    history.replaceState(null, "", window.location.pathname);
+} 
 
 document.addEventListener("DOMContentLoaded", () => {
     // 初期表示

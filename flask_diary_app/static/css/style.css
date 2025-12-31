@@ -211,6 +211,24 @@ header .new-diary:hover {
   border-color: var(--error);
 }
 
+/* flashメッセージ部 */
+.flash-messages-container {
+    max-width: 800px;
+    margin: 20px auto;
+    padding: 0 20px;
+    border-radius: 6px;
+}
+
+.flash {
+    padding: 5px;    
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+.flash-error {
+    background-color: var(--flash-error-bg);
+    color: var(--flash-error-text);
+}
 
 /* ボタン関連*/
 .btn {
