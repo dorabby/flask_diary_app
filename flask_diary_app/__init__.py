@@ -49,8 +49,7 @@ def index():
     sort = request.args.get("sort", "new")
     preserve = request.args.get("preserve", "")
 
-    db = sqlite3.connect(DATABASE)
-    db.row_factory = sqlite3.Row #カラム名でアクセスできるようになる
+    db = get_db()
     c = db.cursor()
 
     sql = """SELECT id, create_date, title, content, image FROM diaries"""
@@ -95,12 +94,6 @@ def index():
 
     return render_template("index.html", diaries=diary_list, sort=sort, preserve=preserve)
 
-# テーマ切り替え
-@app.route("/toggle_theme")
-def toggle_theme():
-    session["theme"] = "dark" if session.get("theme") == "light" else "light"
-    return redirect(request.referrer or url_for("index"))
-
 # 新規登録
 @app.route("/new", methods=["GET", "POST"])
 def new_diary():
@@ -115,79 +108,88 @@ def new_diary():
             filename = save_image(image_file)
 
         date = datetime.now().strftime("%Y/%m/%d %H:%M:%S")
-        db = sqlite3.connect(DATABASE)
-        db.row_factory = sqlite3.Row
-        c = db.cursor()
-        c.execute("INSERT INTO diaries (create_date, updata_date, title, content, image) VALUES (?, ?, ?, ?, ?)",
-                  (date, date, data["title"], data["content"], filename))
-        db.commit()
-        db.close()
+        try:
+            with get_db() as db:
+                c = db.cursor()
+                c.execute("INSERT INTO diaries (create_date, updata_date, title, content, image) VALUES (?, ?, ?, ?, ?)",
+                    (date, date, data["title"], data["content"], filename))
+                db.commit()
+        except Exception as e:
+            return internal_error(e)
+        finally:
+            if db:
+                db.close()
         return redirect(url_for("index"))
     return render_template("new.html",mode="create", errors={})
 
 # 詳細取得
 @app.route("/diary/<int:diary_id>")
 def diary_detail(diary_id):
-    db = sqlite3.connect(DATABASE)
-    db.row_factory = sqlite3.Row
-    c = db.cursor()
-    c.execute("SELECT id, create_date, updata_date, title, content, image FROM diaries WHERE id = ?", (diary_id,))
-    diary = c.fetchone()
-    db.close()
+    try:
+        with get_db() as db:
+            c = db.cursor()
+            diary = get_diary_or_redirect(c, diary_id)
+            if diary is None:
+                return redirect(url_for("index"))
+    except Exception as e:
+        return internal_error(e)
+    finally:
+        if db:
+            db.close()
     return render_template("detail.html", diary=diary)
 
 # 編集
 @app.route("/edit/<int:diary_id>", methods=["GET", "POST"])
 def edit_diary(diary_id):
-    db = sqlite3.connect(DATABASE)
-    db.row_factory = sqlite3.Row
-    c = db.cursor()
+    try:
+        with get_db() as db:
+            c = db.cursor()
 
-    # データ取得
-    c.execute("SELECT * FROM diaries WHERE id = ?", (diary_id,))
-    diary = c.fetchone()
+            # データ取得
+            diary = get_diary_or_redirect(c, diary_id)
+            if diary is None:
+                return redirect(url_for("index"))
+            if request.method == "POST":
+                errors, data = validation_content(request.form.get("title"), request.form.get("content"))
+                image_file = request.files.get("image")
+                delete_image = request.form.get("delete_image")
+                # 画像を取得
+                c.execute("SELECT image FROM diaries WHERE id = ?", (diary_id,))
+                existing = c.fetchone()
+                filename = existing["image"]
+                if errors:
+                    db.close()
+                    return render_template(
+                        "edit.html",
+                        errors=errors,
+                        title=data["title"],
+                        content=data["content"],
+                        image=filename,
+                        diary_id=diary_id
+                    )
+                # 画像削除チェックがあれば削除
+                if delete_image and filename:
+                    del_image(filename)
+                    filename = None
+                    
+                elif image_file and allowed_file(image_file.filename):
+                    # 古い画像を削除
+                    if filename:
+                        del_image(filename)
+                    # 新しい画像を保存
+                    filename = save_image(image_file)
 
-    if request.method == "POST":
-        errors, data = validation_content(request.form.get("title"), request.form.get("content"))
-        image_file = request.files.get("image")
-        delete_image = request.form.get("delete_image")
-        # 画像を取得
-        c.execute("SELECT image FROM diaries WHERE id = ?", (diary_id,))
-        existing = c.fetchone()
-        filename = existing["image"]
-        if errors:
+                date = datetime.now().strftime("%Y/%m/%d %H:%M:%S")
+
+                c.execute("UPDATE diaries SET title = ?, content = ?, updata_date=?, image=? WHERE id = ?", 
+                        (data["title"], data["content"], date, filename, diary_id))
+                db.commit()
+                return redirect(url_for("diary_detail", diary_id=diary_id))
+    except Exception as e:
+        return internal_error(e)
+    finally:
+        if db:
             db.close()
-            return render_template(
-                "edit.html",
-                errors=errors,
-                title=data["title"],
-                content=data["content"],
-                image=filename,
-                diary_id=diary_id
-            )
-        # 画像削除チェックがあれば削除
-        if delete_image and filename:
-            del_image(filename)
-            filename = None
-            
-        elif image_file and allowed_file(image_file.filename):
-            # 古い画像を削除
-            if filename:
-                del_image(filename)
-            # 新しい画像を保存
-            filename = save_image(image_file)
-
-        date = datetime.now().strftime("%Y/%m/%d %H:%M:%S")
-
-        c.execute("UPDATE diaries SET title = ?, content = ?, updata_date=?, image=? WHERE id = ?", 
-                  (data["title"], data["content"], date, filename, diary_id))
-        db.commit()
-        db.close()
-
-        return redirect(url_for("diary_detail", diary_id=diary_id))
-
-
-    db.close()
     return render_template(
         "edit.html",
         errors={},
@@ -200,11 +202,21 @@ def edit_diary(diary_id):
 # 削除
 @app.route("/delete/<int:diary_id>", methods=["POST"])
 def delete_diary(diary_id):
-    db = sqlite3.connect(DATABASE)
-    c = db.cursor()
-    c.execute("DELETE FROM diaries WHERE id = ?", (diary_id,))
-    db.commit()
-    db.close()
+    try:
+        with get_db() as db:
+            c = db.cursor()
+            diary = get_diary_or_redirect(c, diary_id)
+            if diary is None:
+                return redirect(url_for("index"))
+            c.execute("DELETE FROM diaries WHERE id = ?", (diary_id,))
+            if diary["image"]:
+                del_image(diary["image"])
+            db.commit()
+    except Exception as e:
+        return internal_error(e)
+    finally:
+        if db:
+            db.close()
     return redirect(url_for("index"))
 
 # 画像登録処理
@@ -221,7 +233,6 @@ def create_uuid_filename(image_file):
 
 # 画像削除
 def del_image(image_filename):
-    print("通過してる？")
     old_path = os.path.join(app.config['UPLOAD_FOLDER'], image_filename)
     if os.path.exists(old_path):
         os.remove(old_path)
@@ -255,19 +266,17 @@ def export_diary(diary_id):
     images_dir = os.path.join(base_dir, "images")
     os.makedirs(images_dir, exist_ok=True)
 
-    db = sqlite3.connect(DATABASE)
-    db.row_factory = sqlite3.Row
-    c = db.cursor()
-
-    c.execute(
-        "SELECT id, title, content, create_date, image FROM diaries WHERE id = ?",
-        (diary_id,)
-    )
-    diary = c.fetchone()
-    db.close()
-
-    if diary is None:
-        abort(404)
+    try:
+        with get_db() as db:
+            c = db.cursor()
+            diary = get_diary_or_redirect(c, diary_id)
+            if diary is None:
+                return redirect(url_for("index"))
+    except Exception as e:
+        return internal_error(e)
+    finally:
+        if db:
+            db.close()
 
     # 画像コピー
     images = []
@@ -328,6 +337,7 @@ def delayed_clean(zip_path, delay=3):
     #3秒後に削除するようにタイマー設定（設定しないと、Windows では削除時にまだファイル掴まれてる判定でエラーになる）
     threading.Timer(delay, clean_zip).start()
 
+#記事インポート
 @app.route("/import", methods=["POST"])
 def import_diary():
     #zip受け取り
@@ -388,20 +398,44 @@ def import_diary():
             dst = os.path.join(app.config["UPLOAD_FOLDER"], image_filename)
             shutil.copy(src, dst)
 
-    db = sqlite3.connect(DATABASE)
-    c = db.cursor()
-
-    c.execute("""
-        INSERT INTO diaries (title, content, create_date, image)
-        VALUES (?, ?, ?, ?)
-        """, (
-        diary["title"],
-        diary["content"],
-        diary["create_date"],
-        image_filename
-    ))
-
-    db.commit()
-    db.close()
+    try:
+        with get_db() as db:
+            c = db.cursor()
+            c.execute("""
+                INSERT INTO diaries (title, content, create_date, image)
+                VALUES (?, ?, ?, ?)
+                """, (
+                diary["title"],
+                diary["content"],
+                diary["create_date"],
+                image_filename
+            ))
+            db.commit()
+    except Exception as e:
+        return internal_error(e)
+    finally:
+        if db:
+            db.close()
     shutil.rmtree(base_dir)
     return redirect(url_for("index"))
+
+#日記取得
+def get_diary_or_redirect(c, diary_id):
+    c.execute("SELECT * FROM diaries WHERE id = ?", (diary_id,))
+    diary = c.fetchone()
+    if diary is None:
+        flash("日記情報がありませんでした。", "error")
+        return None
+    return diary
+
+#500エラー時
+def internal_error(e):
+    print(e)
+    flash("予期しないエラーが発生しました。", "error")
+    return redirect(url_for("index"))
+
+#DB接続処理
+def get_db():
+    db = sqlite3.connect(DATABASE)
+    db.row_factory = sqlite3.Row #カラム名でアクセスできるようになる
+    return db

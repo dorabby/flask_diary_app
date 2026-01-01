@@ -1,7 +1,6 @@
 {% extends "base.html" %}
 {% block title %}Diary App{% endblock %}
 {% block content %}
-<body>
 <form method="get" action="{{ url_for('index') }}" class="search-form">
     <div class="search-box">
         <select name="scope" class="search-scope">
@@ -20,7 +19,9 @@
             placeholder="検索キーワードを入力する"
             value="{{ request.args.get('search', '') }}"
             class="search-input"
+            autocomplete="off"
         >
+        <button type="button" class="search-clear-btn">✖</button>
         <button type="submit" class="search-btn">
             <i class="bi bi-search"></i>
         </button>
@@ -58,5 +59,5 @@
         </a>
         {% endfor %}
     </div>
-</body>
+<script src="{{ url_for('static', filename='js/index.js') }}"></script>
 {% endblock %}

@@ -33,8 +33,14 @@ header .new-diary {
     font-size: 14px;
 }
 .theme-btn {
-    text-decoration: none;
+    padding: 0;
+    border: none;
+    outline: none;
+    background: none;
     color: white;
+    margin-left: 10px;
+    font-size: 15px;
+    cursor: pointer;
 }
 header .new-diary:hover {
     background: #e0f7ff;
@@ -131,6 +137,7 @@ header .new-diary:hover {
 
 .search-box {
     display: flex;
+    position: relative;
     align-items: center;
     background: var(--bg-input);
     border: 1px solid var(--border-sub);
@@ -152,11 +159,37 @@ header .new-diary:hover {
 .search-input {
     flex: 1;
     border: none;
-    padding: 6px 10px;
+    padding-right: 30px;
     font-size: 14px;
     background: transparent;
     color: var(--text-main);
     outline: none;
+}
+
+.search-input:focus {
+    background-color: inherit;
+    box-shadow: none;
+}
+
+.search-clear-btn {
+    position: absolute;
+    right: 40px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 15px;
+    color: var(--text-muted);
+    border: none;
+    background: none;
+    cursor: pointer;
+    display: none;
+}
+
+.search-box.has-value .search-clear-btn {
+    display: block;
+}
+
+.search-clear-btn:hover {
+    color: var(--text-main);
 }
 
 .search-btn {
