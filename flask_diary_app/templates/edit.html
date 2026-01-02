@@ -25,7 +25,9 @@
         </div>
         <div class="form-group">
             <label>画像</label>
-
+            {% if errors.image %}
+                <span class="error-text" id="imageErrorText">{{ errors.image }}</span>
+            {% endif %}
             <div class="image-row">
                 <!-- 現在画像 -->
                 {% if image %}
@@ -62,11 +64,11 @@
         </div>
 
         <div class="btn-group">
-            <a href="{{ url_for('diary_detail', diary_id=diary_id) }}" class="btn btn-blue">戻る</a>
+            <a href="{{ url_for('diary.detail_diary', diary_id=diary_id) }}" class="btn btn-blue">戻る</a>
 
             <div class="btn-right">
                 <button type="submit" class="btn btn-blue">更新</button>
-                <form action="{{ url_for('delete_diary', diary_id=diary_id) }}" method="POST" style="display:inline;">
+                <form action="{{ url_for('diary.delete_diary', diary_id=diary_id) }}" method="POST" style="display:inline;">
                     <button type="submit" class="btn btn-gray" onclick="return confirm('本当に削除しますか？');">削除</button>
                 </form>
             </div>

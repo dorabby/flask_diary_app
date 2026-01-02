@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Diary App{% endblock %}
 {% block content %}
-<form method="get" action="{{ url_for('index') }}" class="search-form">
+<form method="get" action="{{ url_for('diary.index') }}" class="search-form">
     <div class="search-box">
         <select name="scope" class="search-scope">
             <option value="title"
@@ -27,17 +27,17 @@
         </button>
     </div>
     <div class="sort-buttons">
-        <a href="{{ url_for('index', sort='new', preserve=preserve) }}"
+        <a href="{{ url_for('diary.index', sort='new', preserve=preserve) }}"
         class="sort-btn {% if sort == 'new' %}active{% endif %}">
             新しい順
         </a>
 
-        <a href="{{ url_for('index', sort='old', preserve=preserve) }}"
+        <a href="{{ url_for('diary.index', sort='old', preserve=preserve) }}"
         class="sort-btn {% if sort == 'old' %}active{% endif %}">
             古い順
         </a>
 
-        <a href="{{ url_for('index', sort='title', preserve=preserve) }}"
+        <a href="{{ url_for('diary.index', sort='title', preserve=preserve) }}"
         class="sort-btn {% if sort == 'title' %}active{% endif %}">
             タイトル順
         </a>
@@ -46,7 +46,7 @@
     <div class="index-container">
 
         {% for diary in diaries %}
-        <a href="{{ url_for('diary_detail', diary_id=diary.id) }}" class="index-card-link">
+        <a href="{{ url_for('diary.detail_diary', diary_id=diary.id) }}" class="index-card-link">
             <div class="index-card">
                 <span class="date">{{ diary.create_date }}</span>
                 <p class="title">{{ diary.title }}</p>

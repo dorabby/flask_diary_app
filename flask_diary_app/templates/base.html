@@ -10,9 +10,9 @@
 </head>
 <body>
     <header>
-        <h1><a href="{{ url_for('index') }}" class="move_top">Diary App</a></h1>
+        <h1><a href="{{ url_for('diary.index') }}" class="move_top">Diary App</a></h1>
         <div class="header-right">
-            <a href="{{ url_for('new_diary') }}" class="new-diary">日記を書く</a>
+            <a href="{{ url_for('diary.new_diary') }}" class="new-diary">日記を書く</a>
             |
             <button type="button" class="theme-btn" id="themeToggleBtn">
                テーマ：<i class="bi" id="themeIcon"></i>

@@ -39,16 +39,21 @@
             <div class="form-group">
                 <div class="label-row">
                 <label>画像</label>
-                    <div class="preview-container" id="newPreviewContainer">
-                        <img id="newPreview" style="max-width: 200px; display:none;">
-                        <button type="button" id="clearNewPreviewBtn" class="clear-btn" style="display:none;">×</button>
+                    {% if errors.image %}
+                        <span class="error-text" id="imageErrorText">{{ errors.image }}</span>
+                    {% endif %}
+                    <div class="image-row">
+                        <div class="preview-container" id="newPreviewContainer">
+                            <img id="newPreview" style="max-width: 200px; display:none;">
+                            <button type="button" id="clearNewPreviewBtn" class="clear-btn" style="display:none;">×</button>
+                        </div>
                     </div>
                 </div>
                 <input type="file" name="image" id="imageInput">
             </div>
 
             <div class="btn-group">
-                <a href="{{ url_for('index') }}" class="btn btn-blue">戻る</a>
+                <a href="{{ url_for('diary.index') }}" class="btn btn-blue">戻る</a>
 
                 <div class="btn-right">
                     <button type="submit" class="btn btn-blue">保存</button>
@@ -65,7 +70,7 @@
                 <li>画像は自動でリネームされます</li>
             </ul>
         </div>
-        <form action="{{ url_for('import_diary') }}"
+        <form action="{{ url_for('diary.import_diary') }}"
             method="POST" enctype="multipart/form-data">
             <div class="form-group">
                 <input type="file" name="import_file" accept=".zip" >
