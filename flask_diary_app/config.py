@@ -16,5 +16,5 @@ class Config:
     TITLE_LENGTH="タイトルは20文字以内で入力してください。"
     REQUIED_CONTENT="本文は必須項目です。"
     EXTENSION_FILE="対応していない画像形式です。"
-    OVERSIZE_IMAGE="画像サイズは5MB以下にしてください。"
+    OVERSIZE_IMAGE="画像サイズは5MBまでです。"
 

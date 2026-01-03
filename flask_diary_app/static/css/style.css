@@ -303,11 +303,6 @@ header .new-diary:hover {
     display: flex;
     gap: 12px;
 }
-.btn-group.right {
-    display: flex;
-    justify-content: flex-end;
-}
-
 
 /* 入力欄関連 */
 .mode-select{
@@ -342,7 +337,7 @@ header .new-diary:hover {
 /* 画像関連*/
 .image-row {
     display: flex;
-    align-items: start ; 
+    align-items: flex-start ; 
     gap: 10px;
     flex-wrap: wrap;
 }
@@ -358,13 +353,23 @@ input[disabled] {
 
 .preview-container {
     position: relative;
-    display: inline-block;
+    width: 200px;        /* ★ 固定幅 */
+    height: 150px;       /* ★ 固定高さ（img max-height と揃える） */
+    border: 1px solid var(--border-sub);
+    border-radius: 6px;
+    background-color: var(--bg-input);
+
+    display: flex;       /* ★ 中央寄せ用 */
+    align-items: center;
+    justify-content: center;
+
     margin-bottom: 10px;
 }
 
 .preview-container img {
-    max-height: 150px;
-    border-radius: 6px;
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;   /* ★ 比率維持 */
 }
 
 .preview-label {
@@ -377,6 +382,12 @@ input[disabled] {
     font-size: 12px;
     padding: 2px 6px;
     border-radius: 3px;
+}
+
+.image-note {
+    font-size: 0.8rem;
+    color: var(--text-sub);
+    margin: 4px 0 6px;
 }
 
 /* 画像のプレビューのクリアボタン*/

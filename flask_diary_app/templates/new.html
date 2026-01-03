@@ -42,8 +42,12 @@
                     {% if errors.image %}
                         <span class="error-text" id="imageErrorText">{{ errors.image }}</span>
                     {% endif %}
+                    <p class="image-note">
+                        対応形式：jpg / jpeg / png / gif<br>
+                        ファイルサイズ：5MBまで
+                    </p>
                     <div class="image-row">
-                        <div class="preview-container" id="newPreviewContainer">
+                        <div class="preview-container hidden" id="newPreviewContainer">
                             <img id="newPreview" style="max-width: 200px; display:none;">
                             <button type="button" id="clearNewPreviewBtn" class="clear-btn" style="display:none;">×</button>
                         </div>
@@ -63,10 +67,9 @@
     </div>
     <div class="import-form">
         <div class="import-description">
-            <p>バックアップとして保存したZIPファイルから、日記データを取り込めます。</p>
+            <p>バックアップとしてエクスポートしたZIPファイルから、日記データを取り込めます。</p>
             <ul>
                 <li>本アプリでエクスポートしたZIPのみ対応</li>
-                <li>同じタイトルの日記がすでに存在する場合は登録できません</li>
                 <li>画像は自動でリネームされます</li>
             </ul>
         </div>
@@ -74,7 +77,8 @@
             method="POST" enctype="multipart/form-data">
             <div class="form-group">
                 <input type="file" name="import_file" accept=".zip" >
-                <div class="btn-group right">
+                <div class="btn-group">
+                    <a href="{{ url_for('diary.index') }}" class="btn btn-blue">戻る</a>
                     <button type="submit" class="btn btn-blue">インポート</button>
                 </div>
             </div>

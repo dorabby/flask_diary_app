@@ -28,6 +28,10 @@
             {% if errors.image %}
                 <span class="error-text" id="imageErrorText">{{ errors.image }}</span>
             {% endif %}
+            <p class="image-note">
+                対応形式：jpg / jpeg / png / gif<br>
+                ファイルサイズ：5MBまで
+            </p>
             <div class="image-row">
                 <!-- 現在画像 -->
                 {% if image %}
