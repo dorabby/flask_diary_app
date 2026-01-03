@@ -30,4 +30,6 @@
     --flash-error-bg: #3a1f1f;
     --flash-error-text: #f1b0b7;
     --flash-error-border: #6b2a2a;
+    --flash-success-bg: #224422;
+    --flash-success-text: #a3e3a3;
 }

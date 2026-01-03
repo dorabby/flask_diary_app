@@ -38,8 +38,8 @@
                 <div class="preview-container existing-preview" id="existingPreviewContainer">
                     <p class="preview-label">現在の画像</p>
                     <img id="existingPreview"
-                        src="{{ url_for('static', filename='uploads/' + image) }}"
-                        data-original="{{ url_for('static', filename='uploads/' + image) }}">
+                        src="{{ url_for('diary.uploaded_file', filename=image) }}"
+                        data-original="{{ url_for('diary.uploaded_file', filename=image) }}">
                 </div>
                 {% else %}
                 <div class="preview-container existing-preview hidden"  id="existingPreviewContainer">
@@ -73,7 +73,6 @@
             <div class="btn-right">
                 <button type="submit" class="btn btn-blue">更新</button>
                 <form action="{{ url_for('diary.delete_diary', diary_id=diary_id) }}" method="POST" style="display:inline;">
-                    <button type="submit" class="btn btn-gray" onclick="return confirm('本当に削除しますか？');">削除</button>
                 </form>
             </div>
         </div>

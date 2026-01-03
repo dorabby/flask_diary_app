@@ -52,7 +52,7 @@
                 <p class="title">{{ diary.title }}</p>
                 <p class="preview">{{ diary.preview }}</p>
                 {% if diary.image %}
-                <img src="{{ url_for('static', filename='uploads/' + diary.image) }}" 
+                <img src="{{ url_for('diary.uploaded_file', filename=diary.image) }}" 
                     alt="image" class="thumbnail">
                 {% endif %}
             </div>

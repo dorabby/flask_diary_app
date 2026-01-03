@@ -1,8 +1,27 @@
 import os
+import sys
 from flask import Flask
 
 def create_app():
-    app = Flask(__name__, instance_relative_config=True)
+    if getattr(sys, "frozen", False):
+        # exe 実行時：ユーザー書き込み可能な場所
+        base_dir = sys._MEIPASS
+        instance_dir = os.path.join(
+            os.environ["LOCALAPPDATA"],
+            "flask_diary_app"
+        )
+    else:
+        # 通常 python 実行時：Flask標準の instance
+        base_dir = os.path.abspath(os.path.dirname(__file__))
+        instance_dir = None
+
+    app = Flask(
+        __name__,
+        instance_relative_config=True,
+        instance_path=instance_dir,
+        template_folder=os.path.join(base_dir, "templates"),
+        static_folder=os.path.join(base_dir, "static")
+    )
 
     # instance_path 確保
     os.makedirs(app.instance_path, exist_ok=True)
@@ -13,7 +32,7 @@ def create_app():
     )
     # 画像アップロードフォルダ
     app.config["UPLOAD_FOLDER"] = os.path.join(
-        app.root_path, "static", "uploads"
+        app.instance_path, "uploads"
     )
     # 一時フォルダ（インポート/エクスポート処理時に使用する）
     app.config["TMP_FOLDER"] = os.path.join(
@@ -32,7 +51,7 @@ def create_app():
         #DB（なければ）作成
         init_db()
 
-    app.secret_key = "secret-key"
+    app.secret_key = os.urandom(24)
 
     return app
 

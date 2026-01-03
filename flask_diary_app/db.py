@@ -1,11 +1,12 @@
 #DB関連処理
 import sqlite3
 
-DATABASE = "flask_diary_app/diary.db"
+from flask import current_app
+
 
 # アプリ起動時にDBがなければ作成する
 def init_db():
-    db = sqlite3.connect(DATABASE)
+    db = sqlite3.connect(current_app.config["DATABASE"])
     table = db.cursor()
     table.execute('''
         CREATE TABLE IF NOT EXISTS diaries (
@@ -22,6 +23,6 @@ def init_db():
 
 #DB接続
 def get_db():
-    db = sqlite3.connect(DATABASE)
+    db = sqlite3.connect(current_app.config["DATABASE"])
     db.row_factory = sqlite3.Row #カラム名でアクセスできるようになる
     return db

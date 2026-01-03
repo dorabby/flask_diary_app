@@ -1,8 +1,10 @@
 from datetime import datetime
-from flask import Blueprint, flash, redirect, render_template, request, send_file, url_for
+import shutil
+from flask import Blueprint, flash, redirect, render_template, request, send_file, url_for, current_app, send_from_directory
 from flask_diary_app.blueprints.diary.services import create, delayed_clean, delete, export_zip, get_diary, get_diary_list, import_zip, save_image, update, validate_diary
 from flask_diary_app.config import Config
 from flask_diary_app.errors import internal_error
+from pathlib import Path
 
 
 #Blueprintオブジェクトを作る（アプリを分割して管理するためのもの）
@@ -131,12 +133,21 @@ def export_diary(diary_id):
 
     zip_path, timestamp = export_zip(diary)
     #zipファイル削除処理
+    # delayed_clean(zip_path)
+    # return send_file(
+    #     zip_path,
+    #     as_attachment=True,
+    #     download_name=f"diary_export_{timestamp}.zip"
+    # )
+    downloads = Path.home() / "Downloads"
+    downloads.mkdir(exist_ok=True)
+
+    final_path = downloads / f"diary_export_{timestamp}.zip"
+    shutil.copy(zip_path, final_path)
+
+    flash(f"エクスポートしました: {final_path}", "success")
     delayed_clean(zip_path)
-    return send_file(
-        zip_path,
-        as_attachment=True,
-        download_name=f"diary_export_{timestamp}.zip"
-    )
+    return redirect(url_for("diary.detail_diary", diary_id=diary_id))
 
 #記事インポート
 @diary_bp.route("/import", methods=["POST"])
@@ -165,3 +176,10 @@ def import_diary():
         return redirect(url_for("diary.new_diary", mode="import"))
 
     return redirect(url_for("diary.index"))
+
+@diary_bp.route("/uploads/<filename>")
+def uploaded_file(filename):
+    return send_from_directory(
+        current_app.config["UPLOAD_FOLDER"],
+        filename
+    )

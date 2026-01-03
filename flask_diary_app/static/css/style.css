@@ -263,6 +263,11 @@ header .new-diary:hover {
     color: var(--flash-error-text);
 }
 
+.flash-success {
+    background-color: var(--flash-success-bg);
+    color: var(--flash-success-text);
+}
+
 /* ボタン関連*/
 .btn {
     display: inline-block;
