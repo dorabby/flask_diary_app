@@ -282,10 +282,10 @@ header .new-diary:hover {
     text-align: center;
     color: var(--text-inverse);
 }
-.btn-blue {
+.btn-green {
     background-color: var(--accent);
 }
-.btn-blue:hover {
+.btn-green:hover {
     background-color: var(--accent-hover);
 }
 .btn-gray {
@@ -338,7 +338,25 @@ header .new-diary:hover {
 .form-group textarea {
   height:300px
 }
+/* ダイアログ*/
+    dialog {
+        border: none;
+        border-radius: 8px;
+        padding: 1.5em;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
 
+    .dialog-buttons {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 1em;
+    }
+
+    .btn-danger {
+        background-color: #e74c3c;
+        color: #fff;
+    }
 /* 画像関連*/
 .image-row {
     display: flex;

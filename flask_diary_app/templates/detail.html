@@ -12,16 +12,26 @@
         </div>
     {% endif %}
     <div class="btn-group">
-        <a href="{{ url_for('diary.index') }}" class="btn btn-blue">戻る</a>
+        <a href="{{ url_for('diary.index') }}" class="btn btn-green">戻る</a>
 
         <div class="btn-right">
             <a href="{{ url_for('diary.export_diary', diary_id=diary.id) }}" 
                 class="btn btn-gray">エクスポート</a>
-            <a href="{{ url_for('diary.edit_diary', diary_id=diary.id) }}" class="btn btn-blue">編集</a>
-            <form action="{{ url_for('diary.delete_diary', diary_id=diary.id) }}" method="POST" style="display:inline;">
-                <button type="submit" class="btn btn-gray" onclick="return confirm('本当に削除しますか？');">削除</button>
+            <a href="{{ url_for('diary.edit_diary', diary_id=diary.id) }}" class="btn btn-green">編集</a>
+            <form id="delete-form-{{ diary_id }}" action="{{ url_for('diary.delete_diary', diary_id=diary.id) }}" method="POST" style="display:inline;">
+                <button type="button" class="btn btn-gray" data-id="{{ diary_id }}" onclick="showDeleteDialog(this)">削除</button>
             </form>
+            <dialog id="delete-dialog">
+                <form method="dialog">
+                    <p>本当に削除しますか？</p>
+                    <div class="dialog-buttons">
+                        <button id="confirm-btn" class="btn btn-green">はい</button>
+                        <button id="cancel-btn" class="btn btn-gray">キャンセル</button>
+                    </div>
+                </form>
+            </dialog>
         </div>
     </div>
+    <script src="{{ url_for('static', filename='js/detail.js') }}"></script>
 </div>
 {% endblock %}
