@@ -41,7 +41,7 @@
 ## Usage
 
 1. ダウンロード
-      - [GoogleDrive]([URL](https://drive.google.com/file/d/14oK9gt9Qfk5zdRERGVqP2xczk3b9Jqx-/view?usp=drive_link))からダウンロードしてください。
+      - [GoogleDrive](https://drive.google.com/file/d/14oK9gt9Qfk5zdRERGVqP2xczk3b9Jqx-/view?usp=drive_link)からダウンロードしてください。
       - ファイルが大きいためウイルススキャンできないと表示されますが、ウイルススキャンで問題がないことは確認済みですのでそのままダウンロードしてください。
 2. アプリ起動
       - DiaryApp.exe をダブルクリックで起動してください。
