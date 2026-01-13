@@ -132,13 +132,6 @@ def export_diary(diary_id):
         return internal_error(e)
 
     zip_path, timestamp = export_zip(diary)
-    #zipファイル削除処理
-    # delayed_clean(zip_path)
-    # return send_file(
-    #     zip_path,
-    #     as_attachment=True,
-    #     download_name=f"diary_export_{timestamp}.zip"
-    # )
     downloads = Path.home() / "Downloads"
     downloads.mkdir(exist_ok=True)
 
@@ -146,6 +139,7 @@ def export_diary(diary_id):
     shutil.copy(zip_path, final_path)
 
     flash(f"エクスポートしました: {final_path}", "success")
+    #zipファイル削除処理
     delayed_clean(zip_path)
     return redirect(url_for("diary.detail_diary", diary_id=diary_id))
 
